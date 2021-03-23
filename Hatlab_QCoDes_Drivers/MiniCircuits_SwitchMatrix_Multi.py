@@ -12,7 +12,7 @@ import logging
 from typing import Union, List
 from qcodes import Instrument
 import logging
-from QCoDes_Drivers.MiniCircuits_SwitchMatrix import MiniCircuits_SwitchMatrix
+from Hatlab_QCoDes_Drivers.MiniCircuits_SwitchMatrix import MiniCircuits_SwitchMatrix
 
 from urllib.request import urlopen
 

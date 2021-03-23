@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional
 
 from qcodes import Instrument
 from qcodes.utils.validators import Numbers, Enum
-from QCoDes_Drivers import DLLPATH
+from Hatlab_QCoDes_Drivers import DLLPATH
 
 MIN_CURR = -200E-3
 MAX_CURR = 200E-3

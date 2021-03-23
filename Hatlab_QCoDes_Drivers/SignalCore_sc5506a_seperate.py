@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 
 from qcodes import Instrument
 from qcodes.utils.validators import Numbers
-from QCoDes_Drivers import DLLPATH
+from Hatlab_QCoDes_Drivers import DLLPATH
 
 class Device_info_t(ct.Structure):
     _fields_ = [("serial_number", ct.c_uint32),
