@@ -44,7 +44,8 @@ class Yokogawa_GS200_USB(Instrument):
         self._rate = rate
         self._minimum = minimum
         self._maximum = maximum
-								
+
+        self.activate_device_control()
         self.do_set_source("CURR")
         self.do_set_voltage_limit(lim = 1)
         self.usb_write(':SOUR:RANG 100E-3')								
@@ -110,7 +111,7 @@ class Yokogawa_GS200_USB(Instrument):
         if err: 
             raise NameError('YOKO Connection Error')
 
-    def usb_write(self, msg, reactivate=True):
+    def usb_write(self, msg, reactivate=False):
         if reactivate:
             self.activate_device_control()
         err = self._dll.TmcSend( self.ID, ct.c_char_p(bytes(msg,'utf-8')) )
@@ -119,7 +120,7 @@ class Yokogawa_GS200_USB(Instrument):
         if reactivate:
             self.close_device()												
     
-    def usb_ask (self, msg, reactivate=True):
+    def usb_ask (self, msg, reactivate=False):
         if reactivate:
             self.activate_device_control()
         err_s = self._dll.TmcSend( self.ID,  ct.c_char_p(bytes(msg,'utf-8')))
@@ -382,7 +383,7 @@ class Yokogawa_GS200_USB(Instrument):
             iteration +=1
         return [string, iteration]
         
-    def set_range(self,_input, _set = True, reactivate=True):
+    def set_range(self,_input, _set = True, reactivate=False):
         '''
         Gets an appropriate range for the current level 
             Input:
@@ -455,7 +456,7 @@ class Yokogawa_GS200_USB(Instrument):
                 set to (note: this does not change the limit for subsequent 
                 calls)
         '''
-        self.activate_device_control()
+
         org_current = float(self.usb_ask('sour:lev?', reactivate=False))
 
         step_size = new_current - org_current    
@@ -505,8 +506,7 @@ class Yokogawa_GS200_USB(Instrument):
             
         time.sleep(0.1)
         self.usb_write(':prog:int %s;:prog:rep 0;:prog:step' %interval, reactivate=False)
-      
-        self.close_device()
+
         return float(interval)
 
     def step_current(self):
@@ -557,6 +557,9 @@ class Yokogawa_GS200_USB(Instrument):
             if testval.lower() not in strings:
                 raise ValueError('%s is not a valid input' %testval)
         return testval# -*- coding: utf-8 -*-
+
+    def close(self):
+        self.close_device()
 
 if __name__ == "__main__":
     yoko = Yokogawa_GS200_USB("yoko", '91UA31819')

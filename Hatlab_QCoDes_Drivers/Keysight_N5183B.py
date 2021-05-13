@@ -10,7 +10,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from qcodes import VisaInstrument
-from qcodes.utils.validators import Numbers
+from qcodes.utils.validators import Numbers, Enum
 
 
 
@@ -60,7 +60,6 @@ class Keysight_N5183B(VisaInstrument):
                            set_cmd='OUTP:STAT {}',
                            set_parser=int)
 
-
         self.add_parameter('reference_source',
                            get_cmd='ROSC:SOUR?',
                            set_cmd='ROSC:SOUR {}',
@@ -82,6 +81,59 @@ class Keysight_N5183B(VisaInstrument):
                            unit="deg",
                            vals=Numbers(min_value=-180, max_value=179))
 
+        self.add_parameter('frequency_start',
+                           get_cmd='FREQ:STAR?',
+                           get_parser=float,
+                           set_cmd='FREQ:STAR {:.2f}',
+                           set_parser=float,
+                           unit="Hz",
+                           vals=Numbers(min_value=9e3, max_value=max_freq))
+
+        self.add_parameter('frequency_stop',
+                           get_cmd='FREQ:STOP?',
+                           get_parser=float,
+                           set_cmd='FREQ:STOP {:.2f}',
+                           set_parser=float,
+                           unit="Hz",
+                           vals=Numbers(min_value=9e3, max_value=max_freq))
+
+        self.add_parameter('sweep_points',
+                           get_cmd='SWE:POIN?',
+                           get_parser=int,
+                           set_cmd='SWE:POIN {}',
+                           set_parser=int,
+                           unit="pts",
+                           vals=Numbers(min_value=2, max_value=65535))
+
+        self.add_parameter('dwell_time',
+                           get_cmd='SWE:DWEL?',
+                           get_parser=float,
+                           set_cmd='SWE:DWEL {}',
+                           set_parser=float,
+                           unit="sec",
+                           vals=Numbers(min_value=100e-6, max_value=100))
+
+        self.add_parameter('trigger_wait_time',
+                           get_cmd='TRIG:TIM?',
+                           get_parser=float,
+                           set_cmd='TRIG:TIM {}',
+                           set_parser=float,
+                           unit="sec",
+                           vals=Numbers(min_value=0, max_value=100))
+
+        self.add_parameter('frequency_mode',
+                           get_cmd='FREQ:MODE?',
+                           get_parser=str,
+                           set_cmd='FREQ:MODE {}',
+                           set_parser=str,
+                           vals=Enum('CW', 'FIX', 'LIST'))
+
+        self.add_parameter('mod_status',
+                           get_cmd='OUTP:MOD?',
+                           get_parser=int,
+                           set_cmd='OUTP:MOD {}',
+                           set_parser=int)
+
     def get_idn(self) -> Dict[str, Optional[str]]:
         IDN_str = self.ask_raw('*IDN?')
         vendor, model, serial, firmware = map(str.strip, IDN_str.split(','))
@@ -89,6 +141,13 @@ class Keysight_N5183B(VisaInstrument):
             'vendor': vendor, 'model': model,
             'serial': serial, 'firmware': firmware}
         return IDN
+
+    def startSweep(self):
+        self.write_raw('LIST:MODE AUTO')
+
+    def stopSweep(self):
+        self.write_raw('LIST:MODE MAN')
+
 
 if __name__ == "__main__":
     SC1 = Keysight_N5183B("SC1", 'TCPIP0::169.254.253.232::inst0::INSTR')
