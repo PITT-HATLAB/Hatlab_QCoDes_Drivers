@@ -8,6 +8,7 @@ A simple driver for Keysight_N9020A to be used with QCoDes, transferred from the
 
 import logging
 import warnings
+import time
 
 import numpy as np
 
@@ -199,6 +200,23 @@ class Keysight_N9020A(VisaInstrument):
                 data = [float(value) for value in data]
                 np_array = np.reshape(data, (-1, 2))
                 return np_array
+
+    def get_ydata(self, count=0, channel=1, mute=False):
+        '''
+        Reads the data from the current sweep (NEEDS TESTED)
+            Input:
+                channel (int):
+            Output:
+                data (numpy 2dArray) : [x, y] values
+        '''
+        data = None
+        if channel < 1 or channel > 6:
+            raise ValueError('channel must be between 1 and 6')
+        data = self.visa_handle.query('TRAC? TRACE1')
+        data = data.lstrip('[').rstrip(']').split(',')
+        data = [float(value) for value in data]
+        np_array = np.reshape(data)
+        return np_array
 
     def get_previous_data(self, channel=1):
         '''

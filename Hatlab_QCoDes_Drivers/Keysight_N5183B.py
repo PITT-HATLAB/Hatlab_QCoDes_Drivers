@@ -24,6 +24,10 @@ class Keysight_N5183B(VisaInstrument):
         # Query the instrument to see what frequency range was purchased
         freq_dict = {'501': 1e9, '503': 3e9, '505': 6e9, '520': 20e9}
         max_freq = freq_dict[self.ask('*OPT?')[:3]]
+        if '1EA' in self.ask_from_client('*OPT?'):
+            max_pwr = 30
+        else:
+            max_pwr = 19
         self.connect_message()
 
         self.add_parameter('power',
@@ -33,7 +37,7 @@ class Keysight_N5183B(VisaInstrument):
                            set_cmd='SOUR:POW {:.2f}',
                            set_parser=float,
                            unit='dBm',
-                           vals=Numbers(min_value=-144, max_value=19))
+                           vals=Numbers(min_value=-20, max_value=max_pwr))
 
 
         self.add_parameter('frequency',
@@ -147,6 +151,13 @@ class Keysight_N5183B(VisaInstrument):
 
     def stopSweep(self):
         self.write_raw('LIST:MODE MAN')
+
+    def ask_from_client(self, cmd):
+        return self.ask(cmd)
+
+    def write_from_client(self, cmd):
+        return self.write(cmd)
+
 
 
 if __name__ == "__main__":

@@ -373,3 +373,6 @@ class Hat_ENA5071C(Agilent_ENA_5071C):
         self.data_to_mem()
         self.math('DIV')
         self.set_to_manual(trform = 'MLOG')
+
+    def auto_scale(self):
+        self.write(':DISP:WIND1:TRAC1:Y:AUTO')
