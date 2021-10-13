@@ -40,15 +40,15 @@ class MiniCircuits_SwitchMatrix(Instrument):
         if reset:
             self.reset()
 
-    def set_switch(self, sw:str, state: Union[int, str]):
+    def set_switch(self, chanel:str, state: Union[int, str]):
         '''
-        :param sw: switch 'A' through 'H' or 'P' if you want to control all the gates at same time
+        :param chanel: switch 'A' through 'H' or 'P' if you want to control all the gates at same time
         :param state: 0 or 1 to choose output. 0=1 (green), 1=2 (red)
         '''
         state = str(state)
-        logging.info(__name__ + ' : Set switch%s' % sw +' to state %s' % state)
-        if sw != 'P':
-            ret = urlopen(self._address + "/SET" + sw + "=" + state)
+        logging.info(__name__ + ' : Set switch%s' % chanel +' to state %s' % state)
+        if chanel != 'P':
+            ret = urlopen(self._address + "/SET" + chanel + "=" + state)
         else:
             if (len(state)) != 8:
                 print(len(state))

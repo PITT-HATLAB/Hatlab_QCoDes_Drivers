@@ -55,7 +55,7 @@ class MiniCircuits_SwitchMatrix_Multi(Instrument):
         return port_value_dict
 
     def do_set_portvalue_dict(self, port_value_dict:dict):
-        for swt_name, port_value in port_value_dict:
+        for swt_name, port_value in port_value_dict.items():
             self.switch_dict[swt_name].set_switch("P", port_value)
 
 
@@ -96,6 +96,9 @@ class MiniCircuits_SwitchMatrix_Multi(Instrument):
 
     def get_mode_options(self):
         return self._mode_dict
+
+    def set_single_switch(self, switchName:str, chanel: str, state: Union[int, str] ):
+        self.switch_dict[switchName].set_switch(chanel, state)
 
     def reset(self):
         for swt_ in self.switch_dict.values():

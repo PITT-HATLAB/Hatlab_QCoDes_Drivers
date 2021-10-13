@@ -184,7 +184,7 @@ class Keysight_N9020A(VisaInstrument):
         if channel < 1 or channel > 6:
             raise ValueError('channel must be between 1 and 6')
         else:
-            self.visa_handle.write('AVER:CLE')
+            pass
         while data is None:
             try:
                 data = self.visa_handle.query('CALC:DATA%s?' % channel)
@@ -200,6 +200,9 @@ class Keysight_N9020A(VisaInstrument):
                 data = [float(value) for value in data]
                 np_array = np.reshape(data, (-1, 2))
                 return np_array
+
+    def average(self):
+        self.visa_handle.write('AVER:CLE')
 
     def get_ydata(self, count=0, channel=1, mute=False):
         '''

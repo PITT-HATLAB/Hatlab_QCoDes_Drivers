@@ -119,6 +119,7 @@ class SignalCore_SC5511A(Instrument):
         self._dll.sc5511a_close_device(self._handle)
         self._device_info = Device_info_t(0, 0, 0, 0)
         self.get_idn()
+        self.do_set_auto_level_disable(0) # setting this to 1 will lead to unstable output power
 
         self.add_parameter('power',
                            label='power',

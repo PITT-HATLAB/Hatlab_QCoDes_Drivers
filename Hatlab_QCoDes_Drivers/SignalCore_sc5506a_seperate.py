@@ -60,7 +60,7 @@ class SignalCore_SC5506A(Instrument):
                                       f"that you have firmware version=={fw_version}. You can try to update the firmware"
                                       f" using the kits given in firmwareUpdata/sc5506a_rev2_fw_update, remember to "
                                       f"carefully read the readMe.txt")
-
+        self.do_set_auto_level_disable(0)  # setting this to 1 will lead to unstable output power
         # ------------Params-----------------------------------------------------------------
         self.add_parameter('output_status',
                            label='output_status',
