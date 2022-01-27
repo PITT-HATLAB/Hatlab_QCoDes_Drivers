@@ -12,6 +12,28 @@ from qcodes import Instrument
 from qcodes.utils.validators import Numbers
 from Hatlab_QCoDes_Drivers import DLLPATH
 
+def search_5506(max_connection = 20):
+    '''
+    The search_device function of sc5506 and sc5511 works in different way.
+    The description of sc5506a_SearchDevices() in the documentation is wrong!
+
+    param max_connection: maximum number of connected device
+    '''
+    dll_5506 = ct.CDLL(DLLPATH + '//sc5506a_usb.dll')
+    sn_buffers_1 = [ct.create_string_buffer(8) for i in range(max_connection)]  # buffer to store list of serial numbers
+    pointers = (ct.c_char_p * max_connection)(*map(ct.addressof, sn_buffers_1))
+    n_5506 = ct.c_uint()
+    dll_5506.sc5506a_SearchDevices(pointers, ct.byref(n_5506))
+    pointer_list = []
+    if n_5506.value == 0:
+        print ('No SC5506A 6GHz-SigCire is connected')
+    else:
+        print ("Following SC5506A 6GHz-SigCores are connected:")
+        for i in range(n_5506.value):
+            print(pointers[i])
+            pointer_list.append(pointers[i].decode("utf-8") )
+    return pointer_list
+
 class Device_info_t(ct.Structure):
     _fields_ = [("serial_number", ct.c_uint32),
                 ("module_serial_number", ct.c_uint32),

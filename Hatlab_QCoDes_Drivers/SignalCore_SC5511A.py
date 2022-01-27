@@ -13,7 +13,25 @@ from typing import Any, Dict, Optional
 
 from qcodes import Instrument
 from qcodes.utils.validators import Numbers
-from Hatlab_QCoDes_Drivers import DLL
+from Hatlab_QCoDes_Drivers import DLLPATH
+
+def search_5511(max_connection = 20):
+    """
+    param max_connection: maximum number of connected device
+    """
+    dll_5511 = ctypes.CDLL(DLLPATH + '//sc5511a.dll')
+    sn_buffers = [ctypes.create_string_buffer(8) for i in range(max_connection)]  # buffer to store list of serial numbers
+    pointers = (ctypes.c_char_p * max_connection)(*map(ctypes.addressof, sn_buffers))  # pointer list for the buffers
+    n_5511 = dll_5511.sc5511a_search_devices(ctypes.byref(pointers))
+    pointer_list = []
+    if n_5511 == 0:
+        print ('No SC5511A 20GHz-SigCire is connected')
+    else:
+        print ("Following SC5511A 20GHz-SigCores are connected:")
+        for i in range(n_5511):
+            print (pointers[i])
+            pointer_list.append(pointers[i].decode("utf-8") )
+    return pointer_list
 
 class Device_rf_params_t(ctypes.Structure):
     _fields_ = [("rf1_freq", ctypes.c_ulonglong),
@@ -93,7 +111,7 @@ class SignalCore_SC5511A(Instrument):
         if dll is not None:
             self._dll = dll
         else:
-            self._dll = ctypes.CDLL(DLL.__path__._path[0] + '//sc5511a.dll')
+            self._dll = ctypes.CDLL(DLLPATH + '//sc5511a.dll')
 
         if debug:
             print(self._dll)
