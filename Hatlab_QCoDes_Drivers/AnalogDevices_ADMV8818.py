@@ -37,7 +37,7 @@ More device info:
 import logging
 from typing import Union
 from qcodes import Instrument
-from qcodes.utils.validators import Enum
+from qcodes.utils.validators import Enum, Lists, Ints
 import logging
 import clr
 import sys
@@ -64,6 +64,8 @@ def getHardwareIds(IPC_port=IPCPORT):
     for id in all_ids:
         if ("Virtual" not in id) and (len(id) > 0):
             real_ids.append(id)
+    if len(real_ids) == 0:
+        raise RuntimeError("no board detected")
     return real_ids
 
 
@@ -74,7 +76,8 @@ class AnalogDevices_ADMV8818(Instrument):
 
         Input:
           name (string)    : name of the instrument
-          hardwareID (string) : hardwareID of the board
+          hardwareID (string) : hardwareID of the board. If only one board is connected to the PC, hardwareID can None.
+                                Otherwise, check the doc sting above to see how to identify hardwareID.
           IPC_port(string) : port number of the ACE software IPC server.
           reset (bool)     : resets to bypass mode.
 
@@ -93,12 +96,12 @@ class AnalogDevices_ADMV8818(Instrument):
             if len(id_list) == 1: # only one board is connected
                 self.hardwareID = id_list[0]
             else:
-                raise ValueError(f"multiple boards are connected : {id_list}. hardwareID must be specified to initialize the device")
+                raise ValueError(f"multiple boards are detected: {id_list}. hardwareID must be specified to initialize a specific device")
         else:
             if hardwareID in id_list:
                 self.hardwareID = hardwareID
             else:
-                raise ValueError(f"can't find board with id {hardwareID}, available IDs are {id_list}")
+                raise ValueError(f"can't find board with ID {hardwareID}, available IDs are {id_list}")
         self._address = self.hardwareID
 
         # Load hardware with ID
@@ -113,17 +116,78 @@ class AnalogDevices_ADMV8818(Instrument):
         self._set_WRs()
 
         # add params
+        # self.add_parameter('LPF_switch',
+        #                    label='LPF_switch',
+        #                    get_cmd=self.get_LPF_switch,
+        #                    set_cmd=self.set_LPF_switch,
+        #                    vals=Enum(0, 1, 2, 3, 4),
+        #                    docstring="controls the switch to a LPF unit."\
+        #                              "0: bypass;"\
+        #                              "1: 2.05-3.85 GHz"\
+        #                              "2: 3.35-7.25 GHz"\
+        #                              "3: 7.00-13.00 GHz"\
+        #                              "4: 12.55-18.85 GHz"
+        #                    )
+        #
+        # self.add_parameter('HPF_switch',
+        #                    label='HPF_switch',
+        #                    get_cmd=self.get_HPF_switch,
+        #                    set_cmd=self.set_HPF_switch,
+        #                    vals=Enum(0, 1, 2, 3, 4),
+        #                    docstring="controls the switch to a HPF unit."\
+        #                              "0: bypass;"\
+        #                              "1: 1.75-3.55 GHz"\
+        #                              "2: 3.40-7.25 GHz"\
+        #                              "3: 6.60-12.00 GHz"\
+        #                              "4: 12.50-19.90 GHz"
+        #                    )
+        #
+        # self.add_parameter('LPF_register',
+        #                    label='LPF_register',
+        #                    get_cmd=self.get_LPF_register,
+        #                    set_cmd=self.set_LPF_register,
+        #                    vals=Enum(*range(16)),
+        #                    docstring="the value of the 4 bit register that controls the cut-freq of the currently selected LPF unit."
+        #                    )
+        #
+        # self.add_parameter('HPF_register',
+        #                    label='HPF_register',
+        #                    get_cmd=self.get_HPF_register,
+        #                    set_cmd=self.set_HPF_register,
+        #                    vals=Enum(*range(16)),
+        #                    docstring="the value of the 4 bit register that controls the cut-freq of the currently selected HPF unit."
+        #                    )
+
         self.add_parameter('LPF_sel',
                            label='LPF_sel',
                            get_cmd=self.get_LPF_sel,
                            set_cmd=self.set_LPF_sel,
-                           vals=Enum(0, 1, 2, 3, 4),
-                           docstring="sets the LPF unit selection."\
+                           vals=Lists(Ints()),
+                           docstring="controls the selection of LPF unit, and its register value."\
+                                     "first digit controls the switch to a specific LPF unit:"\
                                      "0: bypass;"\
-                                     "1: 2.05-3.85 GHz"\
-                                     "2: 3.35-7.25 GHz"\
-                                     "3: 7.00-13.00 GHz"\
-                                     "4: 12.55-18.85 GHz"
+                                     "1: 2.05-3.85 GHz;"\
+                                     "2: 3.35-7.25 GHz;"\
+                                     "3: 7.00-13.00 GHz;"\
+                                     "4: 12.55-18.85 GHz."\
+                                     "Second digit controls the value of the 4-bit register that controls the cut-freq of the selected LPF:"\
+                                     "The register value can be 0-15, which uniformly divides the cut-freq of the LPF in its tunable range."
+                           )
+
+        self.add_parameter('HPF_sel',
+                           label='HPF_sel',
+                           get_cmd=self.get_HPF_sel,
+                           set_cmd=self.set_HPF_sel,
+                           vals=Lists(Ints()),
+                           docstring="controls the selection of HPF unit, and its register value."\
+                                     "first digit controls the switch to a specific HPF unit:"\
+                                     "0: bypass;"\
+                                     "1: 1.75-3.55 GHz;"\
+                                     "2: 3.40-7.25 GHz;"\
+                                     "3: 6.60-12.00 GHz;"\
+                                     "4: 12.50-19.90 GHz." \
+                                     "Second digit controls the value of the 4-bit register that controls the cut-freq of the selected HPF:" \
+                                     "The register value can be 0-15, which uniformly divides the cut-freq of the HPF in its tunable range."
                            )
 
         if reset:
@@ -137,22 +201,119 @@ class AnalogDevices_ADMV8818(Instrument):
             self.client.SetIntParameter(f"SW_IN_WR{i}", f"{i}", "-1")
             self.client.SetIntParameter(f"SW_OUT_WR{i}", f"{i}", "-1")
 
+    def _validate_sel(self, val):
+        if len(val)!= 2:
+            raise ValueError("filter selection variable must be a length 2 list")
+        if val[0] not in range(5):
+            raise ValueError("first element of filter selection variable selects the filter unit, it must be an integer between 0 to 5")
+        if val[1] not in range(16):
+            raise ValueError("second element of filter selection variable controls the filter register, it must be an integer between 0 to 15")
 
-    def get_LPF_sel(self):
+
+    def get_LPF_switch(self):
+        self.client.ReadSettings() # read settings from the board
+        for i in range(5):
+            if self.client.GetBoolParameter(f"SW_OUT_SET_WR{i}") == "True\n":
+                return i
+        return 0
+
+    def set_LPF_switch(self, val, apply=True):
+        for i in range(val):
+            self.client.SetBoolParameter(f"SW_OUT_SET_WR{i}", "False", "-1")
+        self.client.SetBoolParameter(f"SW_OUT_SET_WR{val}", "True", "-1")
+        if apply:
+            self.client.ApplySettings()
+            time.sleep(0.5)
+
+    def get_HPF_switch(self):
+        self.client.ReadSettings() # read settings from the board
         for i in range(5):
             if self.client.GetBoolParameter(f"SW_IN_SET_WR{i}") == "True\n":
-                return i #todo: what happens when all False?
+                return i
+        return 0
 
 
-    def set_LPF_sel(self, val):
+    def set_HPF_switch(self, val, apply=True):
         for i in range(val):
             self.client.SetBoolParameter(f"SW_IN_SET_WR{i}", "False", "-1")
         self.client.SetBoolParameter(f"SW_IN_SET_WR{val}", "True", "-1")
+        if apply:
+            self.client.ApplySettings()
+            time.sleep(0.5)
+
+
+
+    def get_LPF_register(self):
+        sw = self.get_LPF_switch()
+        val = int(self.client.GetByteParameter(f"LPF_WR{sw}")[:-1])
+        return val
+
+
+    def set_LPF_register(self, val, apply=True):
+        sw = self.get_LPF_switch()
+        self.client.SetByteParameter(f"LPF_WR{sw}", f"{val}", "-1")
+        if apply:
+            self.client.ApplySettings()
+            time.sleep(0.5)
+
+    def get_HPF_register(self):
+        sw = self.get_HPF_switch()
+        val = int(self.client.GetByteParameter(f"HPF_WR{sw}")[:-1])
+        return val
+
+
+    def set_HPF_register(self, val, apply=True):
+        sw = self.get_HPF_switch()
+        self.client.SetByteParameter(f"HPF_WR{sw}", f"{val}", "-1")
+        if apply:
+            self.client.ApplySettings()
+            time.sleep(0.5)
+
+
+
+    def get_LPF_sel(self):
+        self.client.ReadSettings() # read settings from the board
+        sw=0
+        for i in range(5):
+            if self.client.GetBoolParameter(f"SW_OUT_SET_WR{i}") == "True\n":
+                sw=i
+                break
+        reg = int(self.client.GetByteParameter(f"LPF_WR{sw}")[:-1])
+        return [sw, reg]
+
+
+    def set_LPF_sel(self, val, apply=True):
+        self._validate_sel(val)
+        self.set_LPF_switch(val[0], apply=False)
+        self.client.SetByteParameter(f"LPF_WR{val[0]}", f"{val[1]}", "-1")
+        if apply:
+            self.client.ApplySettings()
+            time.sleep(0.5)
+
+
+    def get_HPF_sel(self):
+        self.client.ReadSettings() # read settings from the board
+        sw=0
+        for i in range(5):
+            if self.client.GetBoolParameter(f"SW_In_SET_WR{i}") == "True\n":
+                sw=i
+                break
+        reg = int(self.client.GetByteParameter(f"HPF_WR{sw}")[:-1])
+        return [sw, reg]
+
+
+    def set_HPF_sel(self, val, apply=True):
+        self._validate_sel(val)
+        self.set_HPF_switch(val[0], apply=False)
+        self.client.SetByteParameter(f"HPF_WR{val[0]}", f"{val[1]}", "-1")
+        if apply:
+            self.client.ApplySettings()
+            time.sleep(0.5)
+
+
+
+    def apply_settings(self):
         self.client.ApplySettings()
-
-
-
-
 
     def get_client(self):
         return self.client
@@ -160,39 +321,8 @@ class AnalogDevices_ADMV8818(Instrument):
     def reset(self):
         """Reset the board to bypass filter mode"""
         self.client.Reset()
+        self._set_WRs()
 
 
-
-
-
-# # # Load the AD9208 plug-in
-# client.AddHardwarePlugin('ADMV8818 Board')
-# client.AddByHardwareId('456&B660&97B1B')
-# # # Navigate to initialization wizard and set to one converter
-#
-# # client.AddAttachedHardware(("ADMV8818Board"))
-# client.set_ContextPath(r'\System\Subsystem_3\ADMV8818 Board\ADMV8818')
-# client.NavigateToPath('Root::System.Subsystem_3.ADMV8818 Board.ADMV8818')
-#
-# for i in range(5):
-#     client.SetIntParameter(f"SW_IN_WR{i}", f"{i}", "-1")
-#     client.SetIntParameter(f"SW_OUT_WR{i}", f"{i}", "-1")
-#
-#
-# client.SetBoolParameter("SW_IN_SET_WR0", "False", "-1")
-# client.SetBoolParameter("SW_IN_SET_WR1", "True", "-1")
-# client.SetBoolParameter("SW_OUT_SET_WR0", "False", "-1")
-# client.SetBoolParameter("SW_OUT_SET_WR1", "True", "-1")
-# client.SetByteParameter("LPF_WR1", "10", "-1")
-#
-# # client.ReadRegister("0x0")
-# # time.sleep(2)
-# client.ApplySettings()
-# #
-#
-#
-# # client.Reset()
-#
-#
-#
-#
+if __name__ == "__main__":
+    filter = AnalogDevices_ADMV8818("filter2", '456&B660&97B5E')

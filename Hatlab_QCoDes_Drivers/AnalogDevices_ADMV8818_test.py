@@ -46,6 +46,6 @@ client.ApplySettings()
 
 
 
-client.set_ContextPath(r'\System\Subsystem_1\SDP-S')
+# client.set_ContextPath(r'\System\Subsystem_1\SDP-S')
 
 

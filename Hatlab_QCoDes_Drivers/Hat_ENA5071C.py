@@ -376,3 +376,9 @@ class Hat_ENA5071C(Agilent_ENA_5071C):
 
     def auto_scale(self):
         self.write(':DISP:WIND1:TRAC1:Y:AUTO')
+
+
+
+if __name__ == "__main__":
+    VNA_IP = "TCPIP0::192.168.137.63::INSTR"
+    VNA = Hat_ENA5071C("VNA", VNA_IP)
