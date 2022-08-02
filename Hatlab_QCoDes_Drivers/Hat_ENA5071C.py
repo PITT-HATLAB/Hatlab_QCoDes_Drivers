@@ -7,7 +7,7 @@ import numpy as np
 import logging
 import time
 
-import visa
+import pyvisa as visa
 import types
 import logging
 import numpy as np

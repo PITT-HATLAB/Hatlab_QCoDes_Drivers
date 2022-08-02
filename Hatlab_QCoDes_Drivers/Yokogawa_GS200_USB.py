@@ -3,6 +3,11 @@
 A driver to control the Yokogawa GS200 through USB port using QCoDes
 Modified based on the TCPIP driver written by Eric
 
+!!! somehow this driver requires "Keysight IO Libraries Suite"
+(https://www.keysight.com/us/en/lib/software-detail/computer-software/io-libraries-suite-downloads-2175637.html)
+to be installed on the computer to make it able to find the device.
+The USB driver given on YOKOGAWA website doesn't work...
+
 @author: Chao 
 """
 
@@ -20,7 +25,15 @@ MAX_CURR = 200E-3
 RATE = 0.1e-3 #A/s
 
 
-
+# def searchYOKO(max_connection = 10):
+#     wire = ct.c_int(7)
+#     dll = ct.CDLL(DLLPATH + '\\YOKO_USB\\tmctl64.dll')
+#     sn_buffers = [ct.create_string_buffer(8) for i in range(max_connection)]  # buffer to store list of serial numbers
+#     pointers = (ct.c_char_p * max_connection)(*map(ct.addressof, sn_buffers))  # pointer list for the buffers
+#     max_c = ct.c_int(max_connection)
+#     num = ct.c_int()
+#     dll.TmcSearchDevices(wire, ct.byref(pointers), max_c, ct.byref(num))
+#     return pointers, num
 
 class Yokogawa_GS200_USB(Instrument):
     def __init__(self, name, serial_number = '91UA31819', dll = None,
@@ -103,7 +116,7 @@ class Yokogawa_GS200_USB(Instrument):
         wire = ct.c_int(7) #USB wire
         self.ID = ct.c_int() 
         err = self._dll.TmcInitialize(wire, self._serial_number, ct.byref(self.ID))
-        if err: 
+        if err:
             raise NameError(f'YOKO Connection Error:{err}')
 												
     def close_device(self):
