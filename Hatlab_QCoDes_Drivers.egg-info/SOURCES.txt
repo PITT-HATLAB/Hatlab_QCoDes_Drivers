@@ -1,4 +1,6 @@
 setup.py
+Hatlab_QCoDes_Drivers/AnalogDevices_ADMV8818.py
+Hatlab_QCoDes_Drivers/AnalogDevices_ADMV8818_test.py
 Hatlab_QCoDes_Drivers/GS200.py
 Hatlab_QCoDes_Drivers/Hat_ENA5071C.py
 Hatlab_QCoDes_Drivers/Hat_P9374A.py

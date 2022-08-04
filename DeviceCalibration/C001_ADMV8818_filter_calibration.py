@@ -14,8 +14,8 @@ device_ID = filter_ID.split("&")[-1] # only the last 4 digits are unique to devi
 
 dataPath = rf"L:\Data\00_Calibrations\RT Equipment calibrations\ADMV8818_Filters\{device_ID}\\"
 
-def dataFileName(HPF_sel, LPF_sel):
-    return  f"HPF{HPF_sel[0]}_{HPF_sel[1]}_LPF{LPF_sel[0]}_{LPF_sel[1]}"
+def dataFileName(HPF_setting, LPF_setting):
+    return  f"HPF{HPF_setting[0]}_{HPF_setting[1]}_LPF{LPF_setting[0]}_{LPF_setting[1]}"
 
 def setVNA(VNA):
     VNA.power(-10)
@@ -38,8 +38,8 @@ def saveData(filePath, fileName, fData, magData, overWrite=0):
     f.create_dataset("mag", data=magData)
     f.close()
 
-def readData(filePath, HPF_sel, LPF_sel):
-    fileName = dataFileName(HPF_sel, LPF_sel)
+def readData(filePath, HPF_setting, LPF_setting):
+    fileName = dataFileName(HPF_setting, LPF_setting)
     f = h5py.File(filePath + fileName, "r")
     freq = f["freq"][()]
     mag = f["mag"][()]
@@ -56,8 +56,8 @@ def measureFilterData(filter, VNA):
     plt.figure()
     for i, (iH, rH, iL, rL) in enumerate(product(range(5), range(16), range(5), range(16))):
         fileName = dataFileName([iH, rH], [iL, rL])
-        filter.set_HPF_sel([iH, rH], apply=False)
-        filter.set_LPF_sel([iL, rL], apply=True)
+        filter.set_HPF_setting([iH, rH], apply=False)
+        filter.set_LPF_setting([iL, rL], apply=True)
 
         time.sleep(VNA.sweep_time()*2)
 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     # VNA = Hat_ENA5071C("VNA", VNA_IP)
 
 
-    freq, mag = readData(dataPath, [1,0], [1,1])
+    freq, mag = readData(dataPath, [0,0], [2,12])
     plotData(freq, mag)
 
 
