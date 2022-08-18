@@ -42,6 +42,7 @@ import logging
 import clr
 import sys
 import time
+from typing import Dict, Optional
 
 IPCPORT = "2357"
 sys.path.append(r'C:\Program Files (x86)\Analog Devices\ACE\Client')
@@ -324,6 +325,14 @@ class AnalogDevices_ADMV8818(Instrument):
         self.__client.Reset()
         self._set_WRs()
 
+
+    def get_idn(self) -> Dict[str, Optional[str]]:
+        IDN: Dict[str, Optional[str]] = {
+            'vendor': "Analog Devices",
+            'model': "EVAL-ADMV8818",
+            'hardwareID': self.hardwareID
+            }
+        return IDN
 
 if __name__ == "__main__":
     filter = AnalogDevices_ADMV8818("filter", '456&B660&97B5E')
