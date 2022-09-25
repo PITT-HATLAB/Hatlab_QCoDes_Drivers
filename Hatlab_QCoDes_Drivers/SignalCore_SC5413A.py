@@ -68,7 +68,7 @@ def OffsetDacMap_inv(offsetDAC: int) -> float:
 
 
 class SignalCore_SC5413A(Instrument):
-    def __init__(self, name: str, serial_number: str, dll=None, debug=False, initialize=True, **kwargs: Any):
+    def __init__(self, name: str, serial_number: str, dll=None, debug=False, initialize=False, **kwargs: Any):
         super().__init__(name, **kwargs)
         logging.info(__name__ + f' : Initializing instrument SignalCore modulator {serial_number}')
         if dll is not None:

@@ -270,7 +270,7 @@ class SignalCore_SC5511A(Instrument):
     def do_get_reference_source(self):
         logging.info(__name__ + ' : Getting reference source')
         self._handle = ctypes.c_void_p(self._dll.sc5511a_open_device(self._serial_number))
-        enabled =  self._device_status.operate_status_t.ext_ref_lock_enable
+        enabled =  self._device_status.operate_status_t.ext_ref_lock_enable and self._device_status.operate_status_t.ext_ref_detect
         self._dll.sc5511a_close_device(self._handle)
         return enabled
 
