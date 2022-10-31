@@ -58,11 +58,11 @@ class Arduino_TempSensor(Instrument):
                 temps.append(None)
         return temps
 
-    def get_temp_dict(self):
+    def get_temp_dict(self, sensors="1111"):
         temps = self.get_temperature()
         temp_dict={}
         for i, t in enumerate(temps):
-            if t is not None:
+            if (sensors[i] == "1") and (t is not None):
                 temp_dict[f"{self.name}_{i}_temperature"] = t
         return temp_dict
 
