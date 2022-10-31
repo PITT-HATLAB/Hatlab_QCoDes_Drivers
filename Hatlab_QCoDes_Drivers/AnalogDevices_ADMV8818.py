@@ -335,6 +335,7 @@ class AnalogDevices_ADMV8818(Instrument):
         return IDN
 
 if __name__ == "__main__":
-    filter = AnalogDevices_ADMV8818("filter", '456&B660&97B5E')
+    getHardwareIds()
+    # filter = AnalogDevices_ADMV8818("filter", '456&B660&97B5E')
     # filter.set_HPF_setting([0,0])
-    filter.set_LPF_setting([2,14])
+    # filter.set_LPF_setting([2,14])

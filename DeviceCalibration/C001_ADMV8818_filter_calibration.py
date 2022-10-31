@@ -10,7 +10,7 @@ from Hatlab_QCoDes_Drivers.AnalogDevices_ADMV8818 import AnalogDevices_ADMV8818
 filter_ID = '456&B660&97B5E'
 VNA_IP = "TCPIP0::192.168.137.63::INSTR"
 
-device_ID = filter_ID.split("&")[-1] # only the last 4 digits are unique to device. 456 is vendor ID, B 660is product ID
+device_ID = filter_ID.split("&")[-1] # only the last 4 digits are unique to device. 456 is vendor ID, B660 is product ID
 
 dataPath = rf"L:\Data\00_Calibrations\RT Equipment calibrations\ADMV8818_Filters\{device_ID}\\"
 
@@ -49,7 +49,7 @@ def plotData(freq, mag):
     plt.figure()
     plt.plot(freq, mag)
     plt.xlabel("freq (GHz)")
-    plt.ylabel("logMag")
+    plt.ylabel("logMag (dBm)")
 
 
 def measureFilterData(filter, VNA):
@@ -73,10 +73,13 @@ def measureFilterData(filter, VNA):
 if __name__ == "__main__":
     # filter = AnalogDevices_ADMV8818("filter", filter_ID)
     # VNA = Hat_ENA5071C("VNA", VNA_IP)
+    # measureFilterData(filter, VNA)
 
 
-    freq, mag = readData(dataPath, [0,0], [2,12])
-    plotData(freq, mag)
+
+    freq, mag = readData(dataPath, [0,15], [2,1]) # [HPF switch,HPF Register] , [LPF switch,LPF Register]
+    plotData(freq/1e9, mag)
+
 
 
 
