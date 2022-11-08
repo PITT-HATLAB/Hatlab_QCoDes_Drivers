@@ -24,6 +24,7 @@ import random
 import h5py
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas	# Provides canvas for the graph
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar	# Provides navigation tool bar
 
 # Customization Packages
 #--------------------------------------------------#
@@ -68,12 +69,13 @@ class Main_Window(QMainWindow):
 		# Get Filter Serial Numbers
 
 		Serial_Number_list = []
-
+		self.filter_dict = {}
 		HardwareId_list = getHardwareIds()
 		for HardwareId in HardwareId_list:
 			Id = HardwareId.split("&")
 			Serial_Number = Id[2]
 			Serial_Number_list.append(Serial_Number)
+			self.filter_dict[Serial_Number] = AnalogDevices_ADMV8818(f"filter{HardwareId}", HardwareId)
 
 		# Get Filter Serial Numbers
 		# --------------------------------------------------#
@@ -96,15 +98,9 @@ class Main_Window(QMainWindow):
 	The "Widget" Function generates a Graph-ControlPanel pair
 	"""
 	
-	def Widget(self,Serial_Number):
+	def Widget(self, Serial_Number):
 		#--------------------------------------------------#
-		# Create Layouts
-		
-		Horizontal_layout = QHBoxLayout()	# The Horizontal layout of the entire widget (Graph-ControlPanel Pair)
-		
-		# Create Layouts
-		#--------------------------------------------------#
-		# Slider & Lable 1 (High Pass Filter Switch)
+		# Slider & Label 1 (High Pass Filter Switch)
 		
 		max_val = 4
 		
@@ -117,9 +113,9 @@ class Main_Window(QMainWindow):
 		
 		self.Connect(slider = slider_1, line_edit = High_Pass_Filter_Switch, max_val = max_val)
 		
-		# Slider & Lable 1 (High Pass Filter Switch)
+		# Slider & Label 1 (High Pass Filter Switch)
 		#--------------------------------------------------#
-		# Slider & Lable 2 (High Pass Filter Register)
+		# Slider & Label 2 (High Pass Filter Register)
 		
 		max_val = 15
 		
@@ -132,9 +128,9 @@ class Main_Window(QMainWindow):
 		
 		self.Connect(slider = slider_2, line_edit = High_Pass_Filter_Register, max_val = max_val)
 		
-		# Slider & Lable 2 (High Pass Filter Register)
+		# Slider & Label 2 (High Pass Filter Register)
 		#--------------------------------------------------#
-		# Slider & Lable 3 (Low Pass Filter Switch)
+		# Slider & Label 3 (Low Pass Filter Switch)
 		
 		max_val = 4
 		
@@ -147,9 +143,9 @@ class Main_Window(QMainWindow):
 		
 		self.Connect(slider = slider_3, line_edit = Low_Pass_Filter_Switch, max_val = max_val)
 		
-		# Slider & Lable 3 (Low Pass Filter Switch)
+		# Slider & Label 3 (Low Pass Filter Switch)
 		#--------------------------------------------------#
-		# Slider & Lable 4 (Low Pass Filter Register)
+		# Slider & Label 4 (Low Pass Filter Register)
 		
 		max_val = 15
 		
@@ -162,7 +158,7 @@ class Main_Window(QMainWindow):
 		
 		self.Connect(slider = slider_4, line_edit = Low_Pass_Filter_Register, max_val = max_val)
 		
-		# Slider & Lable 4 (Low Pass Filter Register)
+		# Slider & Label 4 (Low Pass Filter Register)
 		#--------------------------------------------------#
 		# Buttons
 		
@@ -197,7 +193,13 @@ class Main_Window(QMainWindow):
 			self.Draw_Grey_Curve(ax, grey_curve, canvas, High_Pass_Filter_Switch, High_Pass_Filter_Register, Low_Pass_Filter_Switch, Low_Pass_Filter_Register, Serial_Number))	# Connect Low_Pass_Filter_Switch to Grey Curve
 		Low_Pass_Filter_Register.textChanged.connect(lambda:
 			self.Draw_Grey_Curve(ax, grey_curve, canvas, High_Pass_Filter_Switch, High_Pass_Filter_Register, Low_Pass_Filter_Switch, Low_Pass_Filter_Register, Serial_Number))	# Connect Low_Pass_Filter_Register to Grey Curve
-		
+
+		toolbar = NavigationToolbar(canvas , self)	# Create a toolbar for given canvas
+
+		ToolBarCanvas = QVBoxLayout()	# Create a vertical layout with toolbar and canvas
+		ToolBarCanvas.addWidget(toolbar)
+		ToolBarCanvas.addWidget(canvas)
+
 		# Plot
 		#--------------------------------------------------#
 		# Horizontal Layouts
@@ -216,12 +218,14 @@ class Main_Window(QMainWindow):
 		# Nested Layout
 		
 		"""
-		Nest the horizontal layouts into the vertical layout;
+		Nest the horizontal layouts for sliders into the vertical layout;
 		And then nest the vertical layout into the horizontal layout of the Canvas-ControlPanel pair.
 		"""
 		
 		control_panel = self.Controls_Panel_Vertical_Group(slider_group_1,slider_group_2,slider_group_3,slider_group_4,buttons_group)
-		Horizontal_layout.addWidget(canvas)		# Append canvas to widget
+
+		Horizontal_layout = QHBoxLayout()  # The Horizontal layout of the entire widget (Graph-ControlPanel Pair)
+		Horizontal_layout.addLayout(ToolBarCanvas)		# Append canvas to widget
 		Horizontal_layout.addLayout(control_panel)		# Append the vertical layout to the Horizontal layout
 		
 		self.widget = QWidget()	# Create a widget
@@ -344,10 +348,10 @@ class Main_Window(QMainWindow):
 			# Understand the "" character
 			#--------------------------------------------------#
 		
-			except:	# If the character inside the box is nither a number nor the "" character, then ignore the user input
+			except:	# If the character inside the box is neither a number nor the "" character, then ignore the user input
 		
 				slider_value = slider.value()	# Get the slider value
-				line_edit.setText(str(slider_value))	# Set the box value to the slider vlaue
+				line_edit.setText(str(slider_value))	# Set the box value to the slider value
 		
 	# "Update_Slider()" Function
 	#--------------------------------------------------#
@@ -373,6 +377,8 @@ class Main_Window(QMainWindow):
 		
 		blue_curve = ax.plot([],[],'b',linewidth=1)
 		grey_curve = ax.plot([],[],'0.8',linewidth=3)
+		ax.set_xlabel("Frequency (GHz)")
+		ax.set_ylabel("Amplitude (dB)")
 		
 		return ax, blue_curve, grey_curve
 	
@@ -385,19 +391,24 @@ class Main_Window(QMainWindow):
 	"""
 	
 	def Get_Blue_Curve(self, ax, blue_curve, canvas, value_1, value_2, value_3, value_4, Serial_Number):
-		
-		High_Pass_Filter_Switch = random.randint(0,4)	# Get the values for blue_curve
-		High_Pass_Filter_Register = random.randint(0,15)
-		Low_Pass_Filter_Switch = random.randint(0,4)
-		Low_Pass_Filter_Register = random.randint(0,15)
 
-		x = np.arange(0, 100, 0.1)
-		y = High_Pass_Filter_Switch * np.cos(x) + High_Pass_Filter_Register * np.sin(x) + Low_Pass_Filter_Switch * np.cos(2 * x) ** 2 + Low_Pass_Filter_Register * np.sin(2 * x) ** 2
-		
-		blue_curve.pop(0).remove()	# Remove the given blue_curve
-		
-		blue_curve.append(ax.plot(x,y,'b',linewidth=1)[0])	# Draw the new blue_curve on the given figure
-		canvas.draw()	# Append the new figure to the given canvas
+		filter = self.filter_dict[Serial_Number]
+
+		High_Pass_Filter_Switch = filter.get_HPF_setting()[0]  # Get the values for blue curve
+		High_Pass_Filter_Register = filter.get_HPF_setting()[1]
+		Low_Pass_Filter_Switch = filter.get_LPF_setting()[0]
+		Low_Pass_Filter_Register = filter.get_LPF_setting()[1]
+
+		data_path = DATAPATH.format(Serial_Number)
+
+		frequency, magnitude = readData(data_path, [High_Pass_Filter_Switch, High_Pass_Filter_Register],
+										[Low_Pass_Filter_Switch, Low_Pass_Filter_Register])
+
+		blue_curve.pop(0).remove()  # Remove the given blue_curve
+
+		blue_curve.append(
+			ax.plot(frequency/1e9, magnitude, 'b', linewidth=1)[0])  # Draw the new blue_curve on the given figure
+		canvas.draw()  # Append the new figure to the given canvas
 		
 	# Get Blue Curve
 	#--------------------------------------------------#
@@ -405,18 +416,25 @@ class Main_Window(QMainWindow):
 		
 	def Set_Blue_Curve(self, ax, blue_curve, canvas, value_1, value_2, value_3, value_4, Serial_Number):
 
-		High_Pass_Filter_Switch = int(value_1.text())  # Get the values from the numbers displayed on the QLineEdit
-		High_Pass_Filter_Register = int(value_2.text())
-		Low_Pass_Filter_Switch = int(value_3.text())
-		Low_Pass_Filter_Register = int(value_4.text())
-		
-		x = np.arange(0,100,0.1)
-		y = High_Pass_Filter_Switch*np.cos(x)+High_Pass_Filter_Register*np.sin(x)+Low_Pass_Filter_Switch*np.cos(2*x)**2+Low_Pass_Filter_Register*np.sin(2*x)**2
+		High_Pass_Filter_Switch = value_1.text()  # Get the values for blue curve
+		High_Pass_Filter_Register = value_2.text()
+		Low_Pass_Filter_Switch = value_3.text()
+		Low_Pass_Filter_Register = value_4.text()
+
+		data_path = DATAPATH.format(Serial_Number)
+
+		frequency, magnitude = readData(data_path, [High_Pass_Filter_Switch, High_Pass_Filter_Register],
+										[Low_Pass_Filter_Switch, Low_Pass_Filter_Register])
 		
 		blue_curve.pop(0).remove()	# Remove the given blue_curve
 
-		blue_curve.append(ax.plot(x,y,'b',linewidth=1)[0])	# Draw the new blue_curve on the given figure
+		blue_curve.append(ax.plot(frequency/1e9,magnitude,'b',linewidth=1)[0])	# Draw the new blue_curve on the given figure
 		canvas.draw()	# Append the new figure to the given canvas
+
+		filter = self.filter_dict[Serial_Number]
+
+		filter.set_HPF_setting([int(High_Pass_Filter_Switch), int(High_Pass_Filter_Register)])
+		filter.set_LPF_setting([int(Low_Pass_Filter_Switch), int(Low_Pass_Filter_Register)])
 		
 	# Set Blue Curve
 	#--------------------------------------------------#
@@ -436,7 +454,7 @@ class Main_Window(QMainWindow):
 
 		grey_curve.pop(0).remove()  # Remove the given grey_curve
 
-		grey_curve.append(ax.plot(frequency, magnitude, '0.8', linewidth=3)[0])  # Draw the new blue_curve on the given figure
+		grey_curve.append(ax.plot(frequency/1e9, magnitude, '0.8', linewidth=3)[0])  # Draw the new blue_curve on the given figure
 		canvas.draw()  # Append the new figure to the given canvas
 		
 	# Draw Grey Curve
@@ -516,7 +534,7 @@ class Main_Window(QMainWindow):
 #----------------------------------------------------------------------------------------------------#
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 #----------------------------------------------------------------------------------------------------#
-# Reading Data from Filter
+# Read from Filter
 
 #--------------------------------------------------#
 # "readData" Function
@@ -538,10 +556,11 @@ def dataFileName(HPF_setting, LPF_setting):
 # "dataFileName" Function
 #--------------------------------------------------#
 
-# Reading Data from Filter
+# Read from Filter
 #----------------------------------------------------------------------------------------------------#
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 #----------------------------------------------------------------------------------------------------#
+
 # Execute the Application
 
 #--------------------------------------------------#

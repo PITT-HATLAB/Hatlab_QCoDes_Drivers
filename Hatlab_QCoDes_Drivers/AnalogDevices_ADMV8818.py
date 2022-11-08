@@ -109,13 +109,10 @@ class AnalogDevices_ADMV8818(Instrument):
         client.AddHardwarePlugin('ADMV8818 Board')
         self.subsystem = client.AddByHardwareId(self.hardwareID)[:-1]
 
-        # Navigate to the board page
-        client.set_ContextPath(fr'\System\{self.subsystem}\ADMV8818 Board\ADMV8818')
-        client.NavigateToPath(f'Root::System.{self.subsystem}.ADMV8818 Board.ADMV8818')
+        self._move_to_device_page()
 
         # initialize the switch positions
         self._set_WRs()
-
         # add params
         # self.add_parameter('LPF_switch',
         #                    label='LPF_switch',
@@ -194,10 +191,16 @@ class AnalogDevices_ADMV8818(Instrument):
         if reset:
             self.reset()
 
+
+    def _move_to_device_page(self):
+        self.__client.set_ContextPath(fr'\System\{self.subsystem}\ADMV8818 Board\ADMV8818')
+        self.__client.NavigateToPath(f'Root::System.{self.subsystem}.ADMV8818 Board.ADMV8818')
+
     def _set_WRs(self):
         """
         sets the switch positions for where the HPF/LPF state bits are assigned,
         """
+        self._move_to_device_page()
         for i in range(5):
             self.__client.SetIntParameter(f"SW_IN_WR{i}", f"{i}", "-1")
             self.__client.SetIntParameter(f"SW_OUT_WR{i}", f"{i}", "-1")
@@ -212,6 +215,7 @@ class AnalogDevices_ADMV8818(Instrument):
 
 
     def get_LPF_switch(self):
+        self._move_to_device_page()
         self.__client.ReadSettings() # read settings from the board
         for i in range(5):
             if self.__client.GetBoolParameter(f"SW_OUT_SET_WR{i}") == "True\n":
@@ -219,6 +223,7 @@ class AnalogDevices_ADMV8818(Instrument):
         return 0
 
     def set_LPF_switch(self, val, apply=True):
+        self._move_to_device_page()
         for i in range(val):
             self.__client.SetBoolParameter(f"SW_OUT_SET_WR{i}", "False", "-1")
         self.__client.SetBoolParameter(f"SW_OUT_SET_WR{val}", "True", "-1")
@@ -227,6 +232,7 @@ class AnalogDevices_ADMV8818(Instrument):
             time.sleep(0.5)
 
     def get_HPF_switch(self):
+        self._move_to_device_page()
         self.__client.ReadSettings() # read settings from the board
         for i in range(5):
             if self.__client.GetBoolParameter(f"SW_IN_SET_WR{i}") == "True\n":
@@ -235,6 +241,7 @@ class AnalogDevices_ADMV8818(Instrument):
 
 
     def set_HPF_switch(self, val, apply=True):
+        self._move_to_device_page()
         for i in range(val):
             self.__client.SetBoolParameter(f"SW_IN_SET_WR{i}", "False", "-1")
         self.__client.SetBoolParameter(f"SW_IN_SET_WR{val}", "True", "-1")
@@ -245,12 +252,14 @@ class AnalogDevices_ADMV8818(Instrument):
 
 
     def get_LPF_register(self):
+        self._move_to_device_page()
         sw = self.get_LPF_switch()
         val = int(self.__client.GetByteParameter(f"LPF_WR{sw}")[:-1])
         return val
 
 
     def set_LPF_register(self, val, apply=True):
+        self._move_to_device_page()
         sw = self.get_LPF_switch()
         self.__client.SetByteParameter(f"LPF_WR{sw}", f"{val}", "-1")
         if apply:
@@ -258,12 +267,14 @@ class AnalogDevices_ADMV8818(Instrument):
             time.sleep(0.5)
 
     def get_HPF_register(self):
+        self._move_to_device_page()
         sw = self.get_HPF_switch()
         val = int(self.__client.GetByteParameter(f"HPF_WR{sw}")[:-1])
         return val
 
 
     def set_HPF_register(self, val, apply=True):
+        self._move_to_device_page()
         sw = self.get_HPF_switch()
         self.__client.SetByteParameter(f"HPF_WR{sw}", f"{val}", "-1")
         if apply:
@@ -273,6 +284,7 @@ class AnalogDevices_ADMV8818(Instrument):
 
 
     def get_LPF_setting(self):
+        self._move_to_device_page()
         self.__client.ReadSettings() # read settings from the board
         sw=0
         for i in range(5):
@@ -284,6 +296,7 @@ class AnalogDevices_ADMV8818(Instrument):
 
 
     def set_LPF_setting(self, val, apply=True):
+        self._move_to_device_page()
         self._validate_setting(val)
         self.set_LPF_switch(val[0], apply=False)
         self.__client.SetByteParameter(f"LPF_WR{val[0]}", f"{val[1]}", "-1")
@@ -293,6 +306,7 @@ class AnalogDevices_ADMV8818(Instrument):
 
 
     def get_HPF_setting(self):
+        self._move_to_device_page()
         self.__client.ReadSettings() # read settings from the board
         sw=0
         for i in range(5):
@@ -304,6 +318,7 @@ class AnalogDevices_ADMV8818(Instrument):
 
 
     def set_HPF_setting(self, val, apply=True):
+        self._move_to_device_page()
         self._validate_setting(val)
         self.set_HPF_switch(val[0], apply=False)
         self.__client.SetByteParameter(f"HPF_WR{val[0]}", f"{val[1]}", "-1")
@@ -311,9 +326,8 @@ class AnalogDevices_ADMV8818(Instrument):
             self.__client.ApplySettings()
             time.sleep(0.5)
 
-
-
     def apply_settings(self):
+        self._move_to_device_page()
         self.__client.ApplySettings()
 
     def _get_client(self):
@@ -322,6 +336,7 @@ class AnalogDevices_ADMV8818(Instrument):
 
     def reset(self):
         """Reset the board to bypass filter mode"""
+        self._move_to_device_page()
         self.__client.Reset()
         self._set_WRs()
 
@@ -335,7 +350,9 @@ class AnalogDevices_ADMV8818(Instrument):
         return IDN
 
 if __name__ == "__main__":
-    getHardwareIds()
-    # filter = AnalogDevices_ADMV8818("filter", '456&B660&97B5E')
+    # getHardwareIds()
+    filter1 = AnalogDevices_ADMV8818("filter1", '456&B660&97B1B', IPC_port="2357")
+    print("1")
+    filter2 = AnalogDevices_ADMV8818("filter2", '456&B660&97B5E', IPC_port="2357")
     # filter.set_HPF_setting([0,0])
     # filter.set_LPF_setting([2,14])
