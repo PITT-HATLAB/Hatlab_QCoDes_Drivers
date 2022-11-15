@@ -110,7 +110,7 @@ def SigCore_window(params, cli:Client):
     print(directory)
     window_h = len(allGens) * 23 + 120
     temp = tk.Tk()
-    temp.geometry(f'1200x{int(window_h)}+500+300')
+    temp.geometry(f'1050x{int(window_h)}+500+300')
     temp.title('Generator Control')
     try:
         temp.iconbitmap(str(apppath) +'\\icons\\SigCoreWindow.ico')
@@ -266,12 +266,12 @@ def SigCore_window(params, cli:Client):
         temp_units1 = ['0/1', 'GHz', 'dBm', '0/1 (0:Internal, 1:External)']
         SigCore_units += temp_units1
     SC_label_set, SC_entry_set, SC_unit_set = advanced_input_label(temp, SigCore_keys, SigCore_units, row_init=row_num,
-                                                                   grid=(len(allGens), 4), width=20)
+                                                                   grid=(len(allGens), 4), width=16)
 
 
     for i in range(len(allGens)):
-       tk.Button(temp, text = 'Get', width = 10, command = partial(get_one_gen, i), bg = "#FFF661").grid(row = 1 + i, column = 12)
-       tk.Button(temp, text = 'Set', width = 10, command = partial(set_one_gen, i), bg = '#61EF94').grid(row = 1 + i, column = 13)
+       tk.Button(temp, text = 'Get', width = 8, command = partial(get_one_gen, i), bg = "#FFF661").grid(row = 1 + i, column = 12)
+       tk.Button(temp, text = 'Set', width = 8, command = partial(set_one_gen, i), bg = '#61EF94').grid(row = 1 + i, column = 13)
 
 
     row_num += len(allGens)
