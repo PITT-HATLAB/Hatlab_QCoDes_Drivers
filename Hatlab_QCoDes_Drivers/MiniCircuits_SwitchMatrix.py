@@ -77,7 +77,7 @@ class MiniCircuits_SwitchMatrix(Instrument):
         self.set_switch("P", "0" * 8)
 
 if __name__ == "__main__":
-        SWT1 = MiniCircuits_SwitchMatrix('SWT1', address='http://169.254.254.251')
+        SWT1 = MiniCircuits_SwitchMatrix('SWT1', address='http://192.168.137.201')
         
         
         
