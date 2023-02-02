@@ -148,6 +148,11 @@ class Keysight_N9020A(VisaInstrument):
                            get_cmd=':INSTRUMENT?',
                            set_cmd=':INSTRUMENT {}')
 
+        self.add_parameter('num_points',
+                           label='num_points',
+                           get_cmd=':SWE:POIN?',
+                           set_cmd=':SWE:POIN {}')
+
         if reset:
             self.reset()
 
@@ -821,4 +826,4 @@ class Keysight_N9020A(VisaInstrument):
             self.visa_handle.write(':CALCULATE:MARKER%i:CENTER' % markernum)
 
 if __name__ == "__main__":
-    MXA = Keysight_N9020A("MXA", address='TCPIP0::169.254.180.116::INSTR')
+    MXA = Keysight_N9020A("MXA", address='TCPIP0::192.168.137.101::INSTR')
