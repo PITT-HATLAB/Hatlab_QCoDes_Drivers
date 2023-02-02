@@ -10,10 +10,14 @@ A simple driver for SignalCore SC5511A to be used with QCoDes, transferred from 
 import ctypes
 import logging
 from typing import Any, Dict, Optional
+import yaml
 
 from qcodes import Instrument
-from qcodes.utils.validators import Numbers
+from qcodes.utils.validators import Numbers, Enum
 from Hatlab_QCoDes_Drivers import DLLPATH
+import Hatlab_QCoDes_Drivers
+
+ChainedSigCores = yaml.safe_load(open(Hatlab_QCoDes_Drivers.__path__[0]+"\\..\\DeviceInfo\\ChainedSigCores.yaml"))
 
 def search_5511(max_connection = 20):
     """
@@ -139,6 +143,12 @@ class SignalCore_SC5511A(Instrument):
         self.get_idn()
         self.do_set_auto_level_disable(0) # setting this to 1 will lead to unstable output power
 
+        if serial_number in ChainedSigCores["Modified_Ref_In"]:
+            self.do_set_ref_out_freq(100)
+        elif serial_number in ChainedSigCores["Origional_Ref_In"]:
+            self.do_set_ref_out_freq(10)
+
+
         self.add_parameter('power',
                            label='power',
                            get_cmd=self.do_get_power,
@@ -181,6 +191,15 @@ class SignalCore_SC5511A(Instrument):
                            set_parser=int,
                            vals=Numbers(min_value=0,max_value=1))
 
+        self.add_parameter('ref_out_freq',
+                           label='reference out frequency in MHz',
+                           get_cmd=self.do_get_ref_out_freq,
+                           get_parser=int,
+                           set_cmd=self.do_set_ref_out_freq,
+                           set_parser=int,
+                           vals=Enum(10, 100))
+
+
         self.add_parameter('temperature',
                            label='temperature',
                            get_cmd=self.do_get_device_temp,
@@ -205,7 +224,11 @@ class SignalCore_SC5511A(Instrument):
     def close(self):
         self.set_open(0)
 
-        
+    def get_device_status(self):
+        self._handle = ctypes.c_void_p(self._dll.sc5511a_open_device(self._serial_number))
+        self._dll.sc5511a_get_device_status(self._handle, ctypes.byref(self._device_status))
+        self._dll.sc5511a_close_device(self._handle)
+        return self._device_status
 
     def do_set_output_status(self, enable):
         """
@@ -260,20 +283,44 @@ class SignalCore_SC5511A(Instrument):
     
     def do_set_reference_source(self, lock_to_external):
         logging.info(__name__ + ' : Setting reference source to %s' % lock_to_external)
-        high = ctypes.c_ubyte(0)
+        ref_out_freq = self.do_get_ref_out_freq()
+        ref_out_sel = ctypes.c_ubyte(0 if ref_out_freq==10 else 1)
         lock = ctypes.c_ubyte(lock_to_external)
         self._handle = ctypes.c_void_p(self._dll.sc5511a_open_device(self._serial_number))
-        source = self._dll.sc5511a_set_clock_reference(self._handle, high, lock)
+        source = self._dll.sc5511a_set_clock_reference(self._handle, ref_out_sel, lock)
         self._dll.sc5511a_close_device(self._handle)
         return source
     
     def do_get_reference_source(self):
         logging.info(__name__ + ' : Getting reference source')
         self._handle = ctypes.c_void_p(self._dll.sc5511a_open_device(self._serial_number))
+        self._dll.sc5511a_get_device_status(self._handle, ctypes.byref(self._device_status))
         enabled =  self._device_status.operate_status_t.ext_ref_lock_enable and self._device_status.operate_status_t.ext_ref_detect
         self._dll.sc5511a_close_device(self._handle)
         return enabled
 
+    def do_set_ref_out_freq(self, freq):
+        logging.info(__name__ + ' : Setting reference out freq to %s' % freq)
+        if freq == 10:
+            ref_out_sel = 0
+        elif freq == 100:
+            ref_out_sel = 1
+
+        ref_out_sel = ctypes.c_ubyte(ref_out_sel)
+        lock = ctypes.c_ubyte(self.do_get_reference_source())
+        self._handle = ctypes.c_void_p(self._dll.sc5511a_open_device(self._serial_number))
+        source = self._dll.sc5511a_set_clock_reference(self._handle, ref_out_sel, lock)
+        self._dll.sc5511a_close_device(self._handle)
+        return source
+
+    def do_get_ref_out_freq(self):
+        logging.info(__name__ + ' : Getting reference source')
+        self._handle = ctypes.c_void_p(self._dll.sc5511a_open_device(self._serial_number))
+        self._dll.sc5511a_get_device_status(self._handle, ctypes.byref(self._device_status))
+        ref_out_sel = self._device_status.operate_status_t.ref_out_select
+        freq = 100 if ref_out_sel else 10
+        self._dll.sc5511a_close_device(self._handle)
+        return freq
 
     def do_set_power(self, power):
         logging.info(__name__ + ' : Setting power to %s' % power)
@@ -350,5 +397,5 @@ class SignalCore_SC5511A(Instrument):
         return IDN
 
 if __name__ == "__main__":
-    SC1 = SignalCore_SC5511A("SC1", "100024E0")
+    SC3 = SignalCore_SC5511A("SC3", "1000184F")
 

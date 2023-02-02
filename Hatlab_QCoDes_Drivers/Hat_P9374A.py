@@ -101,4 +101,6 @@ class Hat_P9374A(Keysight_P9374A):
         self.math('DIV')
         self.electrical_delay(0)
         self.set_to_manual()
-    
+
+if __name__=="__main__":
+    pVNA = Hat_P9374A("pVNA", address = "TCPIP0::DESKTOP-8EN5L8U::hislip0,4880::INSTR", timeout = 3)
