@@ -8,8 +8,13 @@ purpose: add additional functionality to PNA driver without adding bulk to base 
 """
 from Hatlab_QCoDes_Drivers.Keysight_P9374A import Keysight_P9374A
 import numpy as np
-import easygui
 import time
+
+try:
+    import easygui
+    EASYGUI = True
+except ImportError:
+    EASYGUI = False
 
 class Hat_P9374A(Keysight_P9374A): 
     
@@ -43,8 +48,11 @@ class Hat_P9374A(Keysight_P9374A):
     
     def savetrace(self, avgnum = 3, savedir = None): 
         if savedir == None:
-            savedir = easygui.filesavebox("Choose file to save trace information: ")
-            assert savedir != None
+            if EASYGUI:
+                savedir = easygui.filesavebox("Choose file to save trace information: ")
+                assert savedir != None
+            else:
+                NotImplementedError("data path gui package not available")
             
         elif savedir == "previous": 
             savedir = self.previous_save
@@ -65,9 +73,11 @@ class Hat_P9374A(Keysight_P9374A):
         
     def save_important_info(self, savedir = None):
         if savedir == None:
-            import easygui 
-            savedir = easygui.filesavebox("Choose where to save VNA info: ", default = savedir)
-            assert savedir != None
+            if EASYGUI:
+                savedir = easygui.filesavebox("Choose where to save VNA info: ", default = savedir)
+                assert savedir != None
+            else:
+                NotImplementedError("data path gui package not available")
         file = open(savedir+'.txt', 'w')
         file.write(self.name+'\n')
         file.write("Power: "+str(self.power())+'\n')
@@ -103,4 +113,4 @@ class Hat_P9374A(Keysight_P9374A):
         self.set_to_manual()
 
 if __name__=="__main__":
-    pVNA = Hat_P9374A("pVNA", address = "TCPIP0::DESKTOP-8EN5L8U::hislip0,4880::INSTR", timeout = 3)
+    pVNA = Hat_P9374A("pVNA", address = "TCPIP0::hatlab-msmt3::hislip0::INSTR", timeout = 3)
