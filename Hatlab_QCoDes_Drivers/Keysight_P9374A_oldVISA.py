@@ -202,13 +202,15 @@ class Keysight_P9374A(VisaInstrument):
             sweep_values (Hz, dBm, etc...)
         '''
         logging.info(__name__ + ' : get stim data')
+        self.visa_handle.read_termination = None
         strdata= str(self.ask(':SENS1:X:VAL?'))
+        self.visa_handle.read_termination = "\n"
         return np.array(list(map(float,strdata.split(','))))
 
     def getfdata(self):
         return self.getSweepData()
 
-    def gettrace(self):
+    def gettrace(self, debug=True):
         '''
         Gets amp/phase stimulus data, returns 2 arrays
         
@@ -220,9 +222,25 @@ class Keysight_P9374A(VisaInstrument):
         logging.info(__name__ + ' : get amp, phase stim data')
         prev_trform = self.trform()
         self.trform('POL')
+
+        # when taking large amout of data, sometime using read_termination = "\n" will fail.
+        # temporarily chaning to read_termination = None helps.
+        self.visa_handle.read_termination = None
         strdata= str(self.ask(':CALC1:DATA? FDATA'))
+        self.visa_handle.read_termination = "\n"
+
         self.trform(prev_trform)
-        data = np.array(strdata.split(',')).astype(float)
+
+        if debug:
+            # also need to make self.read() in MessageBasedResource.query() take encoding="latin1"
+            data = np.zeros(len(strdata.split(',')))+1e5
+            for i, dd in enumerate(np.array(strdata.split(','))):
+                try:
+                    data[i] = dd.astype(float)
+                except Exception as e:
+                    print("!!!!!!!!!!!!!", i, dd, e)
+        else:
+            data = np.array(strdata.split(',')).astype(float)
         
         if len(data)%2 == 0:
             print('reshaping data')
