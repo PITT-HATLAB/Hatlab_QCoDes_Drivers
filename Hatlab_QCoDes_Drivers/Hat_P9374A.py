@@ -18,14 +18,14 @@ except ImportError:
 
 class Hat_P9374A(Keysight_P9374A): 
     
-    def __init__(self,name: str, address: str = None, **kwargs):
+    def __init__(self, name: str, address: str = None, **kwargs):
         if address == None:
             raise Exception('TCPIP Address needed')
         super().__init__(name, address, **kwargs)
         self.averaging(1)
         self.ifbw(3000)
         self.avgnum(15)
-        self.power(-20)
+        # self.power(-20)
     
     def average_restart(self):
         self.write('SENS1:AVER:CLE')
