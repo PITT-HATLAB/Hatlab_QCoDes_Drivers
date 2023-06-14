@@ -30,6 +30,7 @@ class YOKO(GS200):
         #for us so this sequence changes that assumption to currents instead of voltages
         self._cached_mode = "CURR"
         self.output_level.source = self.current # the whole parameter, not just one value
+        self.max_abs_current = 10e-3
 
         if initCurrentSource:
             try:
@@ -53,10 +54,13 @@ class YOKO(GS200):
             (in A)
             rate (float) : the rate of change of the current (in A/sec)
         '''
+        if np.abs(new_current) > np.abs(self.max_abs_current): 
+            raise Exception(f'The requested current {new_current*1000} mA is above the maximum value of {self.max_abs_current*1000} mA\n \ 
+            If you need to change this, you can change the class attribute "max_abs_current" by setting "yoko.max_abs_current = new_max_value"')
         min_current = -1 * self.current_range()
         max_current = self.current_range()
         org_current = self.current()
-
+        
         step_size = new_current - org_current
         if rate is None:
             rate = RAMPRATE
