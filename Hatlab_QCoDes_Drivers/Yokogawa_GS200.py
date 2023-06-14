@@ -55,8 +55,8 @@ class YOKO(GS200):
             rate (float) : the rate of change of the current (in A/sec)
         '''
         if np.abs(new_current) > np.abs(self.max_abs_current): 
-            raise Exception(f"The requested current {new_current*1000} mA is above the maximum value of {self.max_abs_current*1000} mA\n \ 
-            If you need to change this, you can change the class attribute 'max_abs_current' by setting 'yoko.max_abs_current = new_max_value'")
+            raise Exception(f"The requested current {new_current*1000} mA is above the maximum value of {self.max_abs_current*1000} mA\n" + \
+            "If you need to change this, you can change the class attribute 'max_abs_current' by setting 'yoko.max_abs_current = new_max_value'")
         min_current = -1 * self.current_range()
         max_current = self.current_range()
         org_current = self.current()
