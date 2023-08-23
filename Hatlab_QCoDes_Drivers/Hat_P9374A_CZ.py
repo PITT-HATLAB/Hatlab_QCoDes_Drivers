@@ -32,7 +32,7 @@ class Hat_P9374A_CZ(Hat_P9374A):
 
 if __name__=="__main__":
     # pVNA = Hat_P9374A("pVNA", address = "TCPIP0::hatlab-msmt3::hislip0::INSTR", timeout = 3)
-    pVNA = Hat_P9374A("pVNA", address = "TCPIP0::DESKTOP-F8SGIH5::hislip0::INSTR", timeout = 3)
+    pVNA = Hat_P9374A("pVNA", address = "TCPIP0::localhost::hislip0::INSTR", timeout = 3)
 
     from matplotlib import pyplot as plt
 

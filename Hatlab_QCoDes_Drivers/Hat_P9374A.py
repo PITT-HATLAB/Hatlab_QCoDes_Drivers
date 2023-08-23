@@ -7,6 +7,7 @@ Created on Tue Dec  8 16:31:55 2020
 purpose: add additional functionality to PNA driver without adding bulk to base driver
 """
 from Hatlab_QCoDes_Drivers.Keysight_P9374A import Keysight_P9374A
+# from Hatlab_QCoDes_Drivers.Keysight_P9374A_oldVISA import Keysight_P9374A
 import numpy as np
 import time
 

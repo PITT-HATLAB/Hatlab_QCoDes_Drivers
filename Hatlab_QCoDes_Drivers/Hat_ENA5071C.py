@@ -15,6 +15,10 @@ import time
 from qcodes import (Instrument, VisaInstrument,
                     ManualParameter, MultiParameter,
                     validators as vals)
+from plottr.data import datadict_storage as dds, datadict as dd
+from data_processing.fitting.QFit import fit, plotRes, getData_from_datadict, reflectionFunc, rounder
+import inspect
+from instrument_drivers.helpers.fileSavingDialog import fileNamefromMenu
 #from pyvisa.visa_exceptions import VisaIOError
 #triggered=[False]*159 
 
@@ -184,10 +188,10 @@ class Agilent_ENA_5071C(VisaInstrument):
         self.add_parameter('trace',
                            set_cmd = None,
                            get_cmd = self.gettrace)
-        self.add_parameter('SweepData',
-                           set_cmd = None,
-                           get_cmd = self.getSweepData,
-                           snapshot_exclude = True)
+        # self.add_parameter('SweepData',
+        #                    set_cmd = None,
+        #                    get_cmd = self.getSweepData,
+        #                    snapshot_exclude = True)
         self.add_parameter('pdata',
                            set_cmd = None,
                            get_cmd = self.getpdata)
@@ -210,24 +214,25 @@ class Agilent_ENA_5071C(VisaInstrument):
         strdata= str(self.ask(':CALC:DATA:FDATA?'))
         data= np.array(list(map(float,strdata.split(','))))
         data=data.reshape((int(np.size(data)/2)),2)
+        
         return data.transpose()
     
-    def getSweepData(self):
-        '''
-        Gets stimulus data in displayed range of active measurement, returns array
-        Will return different data depending on sweep type. 
-        
-        For example: 
-            power sweep: 1xN array of powers in dBm
-            frequency sweep: 1xN array of freqs in Hz
-        Input:
-            None
-        Output:
-            sweep_values (Hz, dBm, etc...)
-        '''
-        logging.info(__name__ + ' : get stim data')
-        strdata= str(self.ask(':SENS1:X:VAL?'))
-        return np.array(list(map(float,strdata.split(','))))
+    # def getSweepData(self):
+    #     '''
+    #     Gets stimulus data in displayed range of active measurement, returns array
+    #     Will return different data depending on sweep type.
+    #
+    #     For example:
+    #         power sweep: 1xN array of powers in dBm
+    #         frequency sweep: 1xN array of freqs in Hz
+    #     Input:
+    #         None
+    #     Output:
+    #         sweep_values (Hz, dBm, etc...)
+    #     '''
+    #     logging.info(__name__ + ' : get stim data')
+    #     strdata= str(self.ask(':SENS1:X:VAL?'))
+    #     return np.array(list(map(float,strdata.split(','))))
 
 
 class Hat_ENA5071C(Agilent_ENA_5071C): 
@@ -262,7 +267,15 @@ class Hat_ENA5071C(Agilent_ENA_5071C):
             probe power range (numpy array)
         '''
         logging.debug(__name__ + ' : get the probe power sweep range')
-        return np.linspace(self.power_start(), self.power_stop(), 1601)
+        return np.linspace(self.power_start(), self.power_stop(), self.num_points())
+    
+    def getSweepData(self):
+        if self.sweep_type() == 'LIN': 
+            return self.getfdata()
+        elif self.sweep_type() == 'POW': 
+            return self.getpdata()
+        else:
+            raise Exception("Sweep type not recognized")
         
     def data_to_mem(self):        
         '''
@@ -309,29 +322,54 @@ class Hat_ENA5071C(Agilent_ENA_5071C):
     
     #DO NOT CHANGE THE DEFAULT KEYWORD ARGUMENTS HERE, CHANGE THEM WHEN YOU CALL THE FUNCTION WITH THE KEYWORD ARGUMENT
     #ex: VNA.savetrace(avgnum = 200)
-    def savetrace(self, avgnum = 3, savedir = None): 
-        if savedir == None:
-            import easygui 
-            savedir = easygui.filesavebox("Choose file to save trace information: ")
-            assert savedir != None
-            
-        elif savedir == "previous": 
-            savedir = self.previous_save
-            assert savedir != None
-        fdata = self.getfdata()
+    def savetrace(self, directory, name, avgnum=10):
+
+        data = dd.DataDict(
+            frequency=dict(unit='Hz'),
+            power=dict(axes=['frequency'], unit='dB'),
+            phase=dict(axes=['frequency'], unit='Degrees'),
+        )
+
         prev_trform = self.trform()
-        self.trform('PLOG')
-        tracedata = self.average(avgnum)
+
+        with dds.DDH5Writer(directory, data, name=name) as writer:
+            freqs = self.getSweepData()  # 1XN array, N in [1601,1000]
+            vnadata = np.array(self.average(avgnum))  # 2xN array, N in [1601, 1000]
+            writer.add_data(
+                frequency=freqs,
+                power=vnadata[0],
+                phase=vnadata[1]
+            )
+            # self.filepath = writer.filepath
+
         self.trform(prev_trform)
-        self.trigger_source('INT')
-        self.previous_save = savedir
-        import h5py
-        file = h5py.File(savedir, 'w')
-        file.create_dataset("VNA Frequency (Hz)", data = fdata)
-        file.create_dataset("S21", data = tracedata)
-        file.create_dataset("Phase (deg)", data = tracedata[1])
-        file.create_dataset("Power (dB)", data = tracedata[0])
-        file.close()
+        self.set_to_manual()
+
+        return directory+'\\'+name
+    # def savetrace(self, avgnum = 3, savedir = None):
+    #     if savedir == None:
+    #         import easygui
+    #         savedir = easygui.filesavebox("Choose file to save trace information: ")
+    #         assert savedir != None
+    #
+    #     elif savedir == "previous":
+    #         savedir = self.previous_save
+    #         assert savedir != None
+    #     fdata = self.getfdata()
+    #     prev_trform = self.trform()
+    #     self.trform('PLOG')
+    #     tracedata = self.average(avgnum)
+    #     self.trform(prev_trform)
+    #     self.trigger_source('INT')
+    #     self.previous_save = savedir
+    #     print('Collected data')
+    #     import h5py
+    #     file = h5py.File(savedir, 'w')
+    #     file.create_dataset("VNA Frequency (Hz)", data = fdata)
+    #     file.create_dataset("S21", data = tracedata)
+    #     file.create_dataset("Phase (deg)", data = tracedata[1])
+    #     file.create_dataset("Power (dB)", data = tracedata[0])
+    #     file.close()
         
         
     def save_important_info(self, savepath = None, print_info = False):
@@ -380,5 +418,5 @@ class Hat_ENA5071C(Agilent_ENA_5071C):
 
 
 if __name__ == "__main__":
-    VNA_IP = "TCPIP0::192.168.137.63::INSTR"
+    VNA_IP = 'TCPIP0::192.168.137.63::INSTR'
     VNA = Hat_ENA5071C("VNA", VNA_IP)

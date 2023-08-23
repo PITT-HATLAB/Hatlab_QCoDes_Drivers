@@ -4,6 +4,7 @@ from typing import Union
 from qcodes import Instrument
 import logging
 from functools import partial
+from qcodes.utils.validators import Enum, Lists, Ints, Arrays
 
 from urllib.request import urlopen
 
@@ -30,6 +31,12 @@ class dummy(Instrument):
                            get_cmd=self.do_get_test_val,
                            set_cmd=self.do_set_test_val,)
 
+        self.add_parameter('list_val',
+                           label='list_val',
+                           vals=Lists(Ints()),
+                           get_cmd=self.do_get_list_val,
+                           set_cmd=self.do_set_list_val,)
+
         if reset:
             self.reset()
 
@@ -45,3 +52,13 @@ class dummy(Instrument):
         time.sleep(10)
         self._test_val = val
 
+    def do_set_list_val(self, val):
+        self._list_val = val
+
+    def do_get_list_val(self):
+        return  self._list_val
+
+if __name__=="__main__":
+    dd = dummy("dd", "1")
+    dd.list_val([1,1,1])
+    print(dd.list_val())

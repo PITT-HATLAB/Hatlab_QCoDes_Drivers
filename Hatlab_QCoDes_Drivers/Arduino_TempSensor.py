@@ -69,7 +69,7 @@ class Arduino_TempSensor(Instrument):
 
 
 if __name__ == "__main__":
-    temp = Arduino_TempSensor("temp", "COM7")
-    temp.temperature()
+    temp = Arduino_TempSensor("temp", "COM3")
+    print(temp.temperature())
 
 
