@@ -68,7 +68,7 @@ class Keysight_N9020A(VisaInstrument):
                            get_parser=float,
                            set_cmd='FREQ:SPAN {}',
                            unit='Hz',
-                           vals=Numbers(min_value=10, max_value=26.5e9))
+                           vals=Numbers(min_value=0, max_value=26.5e9))
 
         self.add_parameter('bandwidth_res',
                            docstring="Note:Only certain discrete resolution bandwidths are available. "
@@ -223,7 +223,7 @@ class Keysight_N9020A(VisaInstrument):
         data = self.visa_handle.query('TRAC? TRACE1')
         data = data.lstrip('[').rstrip(']').split(',')
         data = [float(value) for value in data]
-        np_array = np.reshape(data)
+        np_array = np.array(data)
         return np_array
 
     def get_previous_data(self, channel=1):
@@ -824,6 +824,16 @@ class Keysight_N9020A(VisaInstrument):
             self.visa_handle.write(':CALCULATE:SPECTRUM:MARKER%i:CENTER' % markernum)
         elif mode == 'SA':
             self.visa_handle.write(':CALCULATE:MARKER%i:CENTER' % markernum)
+            
+    
+    def restart_sweep(self):
+        self.visa_handle.write(':INITiate:RESTart')
+
+    def continuous_measurement(self, mode):
+        if mode:
+            self.visa_handle.write(':INIT:CONT ON')
+        else:
+            self.visa_handle.write(':INIT:CONT OFF')
 
 if __name__ == "__main__":
     MXA = Keysight_N9020A("MXA", address='TCPIP0::192.168.137.101::INSTR')
