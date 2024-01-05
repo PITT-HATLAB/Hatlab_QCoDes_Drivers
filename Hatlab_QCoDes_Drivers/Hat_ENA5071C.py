@@ -138,13 +138,13 @@ class Agilent_ENA_5071C(VisaInstrument):
                            get_parser = int
                            )
         self.add_parameter('phase_offset',
-                           get_cmd = ':CALC1:CORR:OFFS:PHAS?',
-                           set_cmd = ':CALC1:CORR:OFFS:PHAS {}',
+                           get_cmd = ':CALC1:SEL:CORR:OFFS:PHAS?',
+                           set_cmd = ':CALC1:SEL:CORR:OFFS:PHAS {}',
                            get_parser = float,
                            vals = vals.Numbers())
         self.add_parameter('electrical_delay',
-                           get_cmd = 'CALC1:CORR:EDEL:TIME?',
-                           set_cmd = 'CALC1:CORR:EDEL:TIME {}',
+                           get_cmd = 'CALC1:SEL:CORR:EDEL:TIME?',
+                           set_cmd = 'CALC1:SEL:CORR:EDEL:TIME {}',
                            unit = 's',
                            get_parser = float,
                            vals = vals.Numbers()
