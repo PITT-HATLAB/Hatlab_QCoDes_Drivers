@@ -101,6 +101,22 @@ class Keysight_N5183B(VisaInstrument):
                            unit="Hz",
                            vals=Numbers(min_value=9e3, max_value=max_freq))
 
+        self.add_parameter('power_start',
+                           get_cmd='POW:STAR?',
+                           get_parser=float,
+                           set_cmd='POW:STAR {:.2f} dBm',
+                           set_parser=float,
+                           unit="dBm",
+                           vals=Numbers(min_value=-20, max_value=30))
+
+        self.add_parameter('power_stop',
+                           get_cmd='POW:STOP?',
+                           get_parser=float,
+                           set_cmd='POW:STOP {:.2f}',
+                           set_parser=float,
+                           unit="dBm",
+                           vals=Numbers(min_value=-20, max_value=30))
+
         self.add_parameter('sweep_points',
                            get_cmd='SWE:POIN?',
                            get_parser=int,
@@ -129,6 +145,13 @@ class Keysight_N5183B(VisaInstrument):
                            get_cmd='FREQ:MODE?',
                            get_parser=str,
                            set_cmd='FREQ:MODE {}',
+                           set_parser=str,
+                           vals=Enum('CW', 'FIX', 'LIST'))
+
+        self.add_parameter('power_mode',
+                           get_cmd='POW:MODE?',
+                           get_parser=str,
+                           set_cmd='POW:MODE {}',
                            set_parser=str,
                            vals=Enum('CW', 'FIX', 'LIST'))
 
@@ -161,4 +184,8 @@ class Keysight_N5183B(VisaInstrument):
 
 
 if __name__ == "__main__":
-    SC1 = Keysight_N5183B("SC1", 'TCPIP0::169.254.253.232::inst0::INSTR')
+    test = Keysight_N5183B("test", 'TCPIP0::169.254.15.148::inst0::INSTR')
+    test.power_start(-10)
+    test.power_stop(0)
+    test.power_mode("FIX")
+    test.stopSweep()

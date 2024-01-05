@@ -8,6 +8,7 @@ The function is not complete yet.
 """
 import logging
 from typing import Any, Dict, Optional, Union, List
+import warnings
 
 import numpy as np
 
@@ -105,6 +106,11 @@ class Keithley_622x(VisaInstrument):
         self.current.get()  # get the current current value from the device to make sure the changing starts from the real value that is on the device right now.
         if self.output_status() == 0:
             raise ValueError("Current source is off. Set output_status to 1 first.")
+        if new_current > 0.1:
+            warnings.warn("The current is too large. Do you want to continue? (yes/no)")
+            reply = input()
+            if reply is "no":
+                return -1
         saved_step = self.output_level.step
         saved_inter_delay = self.output_level.inter_delay
         self.current.step = step

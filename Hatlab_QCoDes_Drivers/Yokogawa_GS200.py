@@ -88,7 +88,7 @@ class YOKO(GS200):
 
         time.sleep(0.1)
         self.write(':prog:int %s;:prog:rep 0;:prog:step' % interval)
-
+        time.sleep(float(interval))
         return float(interval)
 
 
